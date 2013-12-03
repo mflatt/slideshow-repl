@@ -19,6 +19,8 @@
                             (#:module-name path-string?)
                             #:rest (listof string?)
                             module-backing?)]
+  [module-backing-module-name (-> module-backing?
+                                  path-string?)]
   [module-area (->* (module-backing?)
                     (#:width real?
                              #:height real?
@@ -48,7 +50,7 @@
 (define on-screen 0)
 
 (struct repl-group (module-area-maker result-area))
-(struct module-backing (area))
+(struct module-backing (area module-name))
 
 (define (install-background c background)
   (when background
@@ -253,7 +255,8 @@
                              . content-lines)
   (module-backing ((repl-group-module-area-maker group)
                    #:name file-name
-                   content-lines)))
+                   content-lines)
+                  file-name))
 
 (define (module-area backing
                      #:width [w (* client-w 1/4)]

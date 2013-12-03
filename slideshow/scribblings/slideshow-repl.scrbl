@@ -101,18 +101,16 @@ content. For example, a narrow view on one slide might be replaced by
 a wider view on another side with the same module backing, so that
 edits via the first are preserved in the second area's display.}
 
-
 @defproc[(module-backing? [v any/c]) boolean?]{
 
 Returns @racket[#t] if @racket[v] is a context created by
 @racket[make-module-backing], @racket[#f] otherwise.}
 
-
 @defproc[(module-area [backing module-backing?]
                       [#:width width real? (* client-w 1/4)]
                       [#:height height real? (* client-h 1/4)]
                       [#:background background (or/c (is-a?/c color%) string?) "white"]
-                      [#:font-size font-size (or/c #f (integer-in 1 1024))]
+                      [#:font-size font-size (or/c #f (integer-in 1 1024)) #f]
                       [#:auto-eval? auto-eval? any/c #f])
           pict?]{
 
@@ -123,4 +121,10 @@ DrRacket's definitions window) of a particular module created by
 
 When the keyboard focus in the area, typing F5 @racket[require]s the module.
 Typing F6 @racket[require]s the module's @racketidfont{test} submodule.}
+
+@defproc[(module-backing-module-name [backing module-backing?])
+         path-string?]{
+
+Reports the module name of a module backing (as provided to
+@racket[make-module-backing]).}
 
