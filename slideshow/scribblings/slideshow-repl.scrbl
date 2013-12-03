@@ -18,7 +18,8 @@ interactive evaluation within a slide presentation.}
                     [#:height height real? (* client-h 1/4)]
                     [#:font-size font-size (or/c #f (integer-in 1 1024)) #f]
                     [#:background background (or/c #f (is-a?/c color%) string?) #f]
-                    [#:prompt prompt-str string? "> "])
+                    [#:prompt prompt-str string? "> "]
+                    [content string?] ...)
          pict?]{
 
 Creates a @|pict| that displays as an interactive evaluation (i.e., a
@@ -39,7 +40,11 @@ When @racket[background] is not @racket[#f], it determines a
 background for the area.
 
 The @racket[prompt-str] determines a prompt that is show for input
-expressions in the interactive-evaluation area.}
+expressions in the interactive-evaluation area.
+
+The @racket[content] strings, if any, are inserted into the evaluation
+area after the prompt, with a newline between each @racket[content]
+string.}
 
 
 @defproc[(make-repl-group [#:log-file log-file path-string? "eval-log.rktl"]
@@ -70,7 +75,8 @@ Returns @racket[#t] if @racket[v] is a context created by
                       [#:width width real? (* client-w 2/3)]
                       [#:height height real? (* client-h 1/4)]
                       [#:background background (or/c (is-a?/c color%) string?) "white"]
-                      [#:font-size font-size (or/c #f (integer-in 1 1024)) #f])
+                      [#:font-size font-size (or/c #f (integer-in 1 1024)) #f]
+                      [content string?] ...)
          pict?]{
 
 Like @racket[repl-area], but for the result area (analogous to

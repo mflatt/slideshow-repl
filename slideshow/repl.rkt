@@ -33,6 +33,7 @@
                              #:height real?
                              #:background (or/c #f (is-a?/c color%) string?)
                              #:font-size (or/c #f (integer-in 1 1024)))
+                    #:rest (listof string?)
                     pict?)]
   [repl-area (->* ()
                   (#:width real?
@@ -40,6 +41,7 @@
                              #:background (or/c #f (is-a?/c color%) string?)
                              #:font-size (or/c #f (integer-in 1 1024))
                              #:prompt string?)
+                  #:rest (listof string?)
                   pict?)]))
 
 (define (scale-font-size s)
@@ -229,13 +231,20 @@
   (define (result-area #:width w
                        #:height h
                        #:font-size font-size
-                       #:background background)
+                       #:background background
+                       content)
     (interactive (blank w h)
                  (lambda (win)
                    (reset-font! font-size)
                    (send result-editor reset-console)
                    (when prompt-str
                      (send result-editor initialize-console))
+                   (unless (null? content)
+                     (for ([c (in-list content)]
+                           [i (in-naturals)])
+                       (unless (zero? i)
+                         (send result-editor insert "\n"))
+                       (send result-editor insert c)))
                    (define c 
                      (new editor-canvas% 
                           [parent win]
@@ -275,9 +284,11 @@
                      #:width [w (* client-w 2/3)]
                      #:height [h (* client-h 1/4)]
                      #:background [background #f]
-                     #:font-size [font-size #f])
+                     #:font-size [font-size #f]
+                     . content)
   
   ((repl-group-result-area group)
+   content
    #:width w
    #:height h
    #:font-size font-size
@@ -287,10 +298,12 @@
                    #:height [h (* client-h 1/4)]
                    #:font-size [font-size #f]
                    #:background [background #f]
-                   #:prompt [prompt-str "> "])
-  (result-area (make-repl-group #:prompt prompt-str)
-               #:width w
-               #:height h
-               #:font-size font-size
-               #:background background))
+                   #:prompt [prompt-str "> "]
+                   . content)
+  (apply result-area (make-repl-group #:prompt prompt-str)
+         #:width w
+         #:height h
+         #:font-size font-size
+         #:background background
+         content))
 
