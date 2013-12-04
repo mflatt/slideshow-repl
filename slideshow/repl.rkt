@@ -61,6 +61,24 @@
               (make-object color% background)
               background))))
 
+(define (fit-lines init-lines w h)
+  (if printing?
+      (let ([p (apply
+                vl-append
+                (current-code-line-sep)
+                (for/list ([l (in-list
+                               (regexp-split
+                                #rx"\n"
+                                (apply string-append
+                                       (add-between init-lines "\n"))))])
+                  (tt l)))])
+        (lt-superimpose
+         (scale p (min 1
+                       (/ w (pict-width p))
+                       (/ h (pict-height p))))
+         (blank w h)))
+      (blank w h)))
+
 (define (make-repl-group #:log-file [log-file "eval-log.rktl"]
                          #:prompt [prompt-str #f])
   (define result-editor 
@@ -222,7 +240,7 @@
                      #:background background
                      #:font-size font-size
                      #:auto-eval? auto-eval?)
-      (define content (interactive (blank w h)
+      (define content (interactive (fit-lines init-lines w h)
                                    (create font-size
                                            auto-eval?
                                            background)))
@@ -233,7 +251,13 @@
                        #:font-size font-size
                        #:background background
                        content)
-    (interactive (blank w h)
+    (interactive (fit-lines (if (and (pair? content)
+                                     prompt-str)
+                                (cons (string-append prompt-str
+                                                     (car content))
+                                      (cdr content))
+                                content)
+                            w h)
                  (lambda (win)
                    (reset-font! font-size)
                    (send result-editor reset-console)
