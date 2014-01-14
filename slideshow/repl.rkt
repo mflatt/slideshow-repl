@@ -14,7 +14,7 @@
   [make-repl-group (->* ()
                         (#:log-file path-string?
                                     #:prompt (or/c #f string?)
-                                    #:namespace namespace?)
+                                    #:make-namespace (-> namespace?))
                         repl-group?)]
   [make-module-backing (->* (repl-group?)
                             (#:module-name path-string?)
@@ -42,7 +42,7 @@
                              #:background (or/c #f (is-a?/c color%) string?)
                              #:font-size (or/c #f (integer-in 1 1024))
                              #:prompt string?
-                             #:namespace namespace?)
+                             #:make-namespace (-> namespace?))
                   #:rest (listof string?)
                   pict?)]))
 
@@ -83,11 +83,12 @@
 
 (define (make-repl-group #:log-file [log-file "eval-log.rktl"]
                          #:prompt [prompt-str #f]
-                         #:namespace [ns (make-base-namespace)])
-  (define result-editor 
+                         #:make-namespace [make-namespace make-base-namespace])
+  (define result-editor
     (new (class repl-text%
            (define/override (get-prompt) (or prompt-str ""))
-           (super-new))))
+           (super-new))
+         [namespace (make-namespace)]))
   (define result-custodian (make-custodian))
 
   (define available (make-hash))
@@ -119,6 +120,7 @@
     (for ([e (in-hash-values available)])
       (send e unhighlight-ranges void))
 
+    (define ns (make-namespace))
     (namespace-attach-module (current-namespace) 'errortrace/errortrace-key ns)
     
     (yield
@@ -325,10 +327,10 @@
                    #:font-size [font-size #f]
                    #:background [background #f]
                    #:prompt [prompt-str "> "]
-                   #:namespace [namespace (make-base-namespace)]
+                   #:make-namespace [make-namespace make-base-namespace]
                    . content)
   (apply result-area (make-repl-group #:prompt prompt-str
-                                      #:namespace namespace)
+                                      #:make-namespace make-namespace)
          #:width w
          #:height h
          #:font-size font-size

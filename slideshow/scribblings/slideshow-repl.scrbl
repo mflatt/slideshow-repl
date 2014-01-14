@@ -19,7 +19,7 @@ interactive evaluation within a slide presentation.}
                     [#:font-size font-size (or/c #f (integer-in 1 1024)) #f]
                     [#:background background (or/c #f (is-a?/c color%) string?) #f]
                     [#:prompt prompt-str string? "> "]
-                    [#:namespace namespace namespace? (make-base-namespace)]
+                    [#:make-namespace make-namespace (-> namespace?) make-base-namespace]
                     [content string?] ...)
          pict?]{
 
@@ -43,7 +43,8 @@ background for the area.
 The @racket[prompt-str] determines a prompt that is show for input
 expressions in the interactive-evaluation area.
 
-The @racket[namespace] argument determines the namespace for evaluation.
+The @racket[make-namespace] argument determines the namespace (created
+once) for evaluation.
 
 The @racket[content] strings, if any, are inserted into the evaluation
 area after the prompt, with a newline between each @racket[content]
@@ -52,7 +53,7 @@ string.}
 
 @defproc[(make-repl-group [#:log-file log-file path-string? "eval-log.rktl"]
                           [#:prompt prompt-str (or/c #f string?) #f]
-                          [#:namespace namespace namespace? (make-base-namespace)])
+                          [#:make-namespace make-namespace (-> namespace?) make-base-namespace])
          repl-group?]{
 
 Returns an evaluation context to be shared by multiple module areas
@@ -67,7 +68,9 @@ The @racket[prompt-str] argument determines the prompt that is shown
 in an result area. If it is not @racket[#f], then he result area
 supports interactive evaluation in the same way as @racket[repl-area].
 
-The @racket[namespace] argument determines the namespace for evaluation.}
+The @racket[make-namespace] argument determines the namespace for
+evaluation. A fresh namespace is created using @racket[make-namespace]
+on each evaluation triggered for a module in the group.}
 
 
 @defproc[(repl-group? [v any/c]) boolean?]{

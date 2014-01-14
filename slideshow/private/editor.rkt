@@ -219,7 +219,8 @@
                 [else (and (char-whitespace? (get-character pos))
                            (loop (+ pos 1)))])))))
 
-    (define ns (make-base-namespace))
+    (init [(init-ns namespace)])
+    (define ns init-ns)
 
     (define/public (evaluate-from-port port ??? callback)
       (set! need-interaction-cleanup? #t)
