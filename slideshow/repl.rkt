@@ -13,7 +13,8 @@
  (contract-out
   [make-repl-group (->* ()
                         (#:log-file path-string?
-                                    #:prompt (or/c #f string?))
+                                    #:prompt (or/c #f string?)
+                                    #:namespace namespace?)
                         repl-group?)]
   [make-module-backing (->* (repl-group?)
                             (#:module-name path-string?)
@@ -40,7 +41,8 @@
                              #:height real?
                              #:background (or/c #f (is-a?/c color%) string?)
                              #:font-size (or/c #f (integer-in 1 1024))
-                             #:prompt string?)
+                             #:prompt string?
+                             #:namespace namespace?)
                   #:rest (listof string?)
                   pict?)]))
 
@@ -80,7 +82,8 @@
       (blank w h)))
 
 (define (make-repl-group #:log-file [log-file "eval-log.rktl"]
-                         #:prompt [prompt-str #f])
+                         #:prompt [prompt-str #f]
+                         #:namespace [ns (make-base-namespace)])
   (define result-editor 
     (new (class repl-text%
            (define/override (get-prompt) (or prompt-str ""))
@@ -116,7 +119,6 @@
     (for ([e (in-hash-values available)])
       (send e unhighlight-ranges void))
 
-    (define ns (make-base-namespace))
     (namespace-attach-module (current-namespace) 'errortrace/errortrace-key ns)
     
     (yield
@@ -323,8 +325,10 @@
                    #:font-size [font-size #f]
                    #:background [background #f]
                    #:prompt [prompt-str "> "]
+                   #:namespace [namespace (make-base-namespace)]
                    . content)
-  (apply result-area (make-repl-group #:prompt prompt-str)
+  (apply result-area (make-repl-group #:prompt prompt-str
+                                      #:namespace namespace)
          #:width w
          #:height h
          #:font-size font-size
