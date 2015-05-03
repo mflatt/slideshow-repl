@@ -150,7 +150,10 @@
                     [current-error-port
                      (send result-editor get-err-port)]
                     [exit-handler (lambda (v)
-                                    (custodian-shutdown-all result-custodian))])
+                                    (custodian-shutdown-all result-custodian))]
+                    [current-print (lambda (v)
+                                     (unless (void? v)
+                                       (pretty-print v)))])
        (thread
         (lambda ()
           (dynamic-require 'errortrace #f)
