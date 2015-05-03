@@ -5,7 +5,9 @@
 (define deps '("errortrace-lib"
                "gui-lib"
                "slideshow-lib"
-               "base"))
+               "base"
+               "pict-lib"
+               "pict-snip-lib"))
 
 (define build-deps '("draw-doc"
                      "draw-lib"
