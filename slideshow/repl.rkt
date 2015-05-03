@@ -5,7 +5,10 @@
          framework
          "private/editor.rkt"
          syntax/modread
-         racket/date)
+         racket/date
+         racket/pretty
+         pict/convert
+         pict/snip)
 
 (provide
  repl-group?
@@ -87,6 +90,7 @@
   (define result-editor
     (new (class repl-text%
            (define/override (get-prompt) (or prompt-str ""))
+           (define/override (call-in-eval thunk) (wrap-eval thunk #f))
            (super-new))
          [namespace (make-namespace)]))
   (define result-custodian (make-custodian))
@@ -122,10 +126,17 @@
 
     (define ns (make-namespace))
     (namespace-attach-module (current-namespace) 'errortrace/errortrace-key ns)
-    
+
+    (parameterize ([current-namespace ns])
+      (wrap-eval
+       (lambda ()
+         (dynamic-require 'errortrace #f)
+         (do-one-eval name t)
+         (dynamic-require (if sm `(submod ,name ,sm) name) 0)))))
+  
+  (define (wrap-eval go [flush? #t])
     (yield
      (parameterize ([current-custodian result-custodian]
-                    [current-namespace ns]
                     [current-module-name-resolver
                      (let ([orig (current-module-name-resolver)])
                        (case-lambda
@@ -151,19 +162,34 @@
                      (send result-editor get-err-port)]
                     [exit-handler (lambda (v)
                                     (custodian-shutdown-all result-custodian))]
-                    [current-print (lambda (v)
-                                     (unless (void? v)
-                                       (pretty-print v)))])
+                    [current-print pretty-print-handler]
+                    [pretty-print-size-hook
+                     (lambda (v display? p)
+                       (if (and (port-writes-special? p)
+                                (or (v . is-a? . snip%)
+                                    (pict? v)
+                                    (pict-convertible? v)))
+                           1
+                           #f))]
+                    [pretty-print-print-hook
+                     (lambda (v display? p)
+                       (define new-v
+                         (cond
+                          [(v . is-a? . snip%) v]
+                          [(pict? v) (new pict-snip% [pict v])]
+                          [(pict-convertible? v)
+                           (new pict-snip% [pict (pict-convert v)])]
+                          [else v]))
+                       (write-special new-v p))])
        (thread
         (lambda ()
-          (dynamic-require 'errortrace #f)
           (with-handlers ([exn:fail? (lambda (x)
                                        (send result-editor
                                              show-error
                                              x))])
-            (do-one-eval name t)
-            (dynamic-require (if sm `(submod ,name ,sm) name) 0)
-            (flush-output (send result-editor get-value-port))))))))
+            (go)
+            (when flush?
+              (flush-output (send result-editor get-value-port)))))))))
 
   (define (do-one-eval name t)
     (define txt (send t get-text))

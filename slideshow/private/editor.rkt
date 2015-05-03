@@ -221,19 +221,21 @@
 
     (init [(init-ns namespace)])
     (define ns init-ns)
+    
+    (define/public (call-in-eval thunk) (void))
 
     (define/public (evaluate-from-port port ??? callback)
       (set! need-interaction-cleanup? #t)
-      (let loop ()
-        (define e (read-syntax port port))
-        (unless (eof-object? e)
-          (with-handlers ([exn? (lambda (exn)
-                                  (show-error exn))])
-            (call-with-values (lambda () (eval e ns))
-              (lambda l (for ([v (in-list l)])
-                          (unless (void? v)
-                            (pretty-print v (get-value-port)))))))
-          (loop)))
+      (call-in-eval
+       (lambda ()
+         (let loop ()
+           (define e (read-syntax port port))
+           (unless (eof-object? e)
+             (with-handlers ([exn? (lambda (exn)
+                                     (show-error exn))])
+               (call-with-values (lambda () (eval e ns))
+                 (lambda l (map (current-print) l))))
+             (loop)))))
       (cleanup)
       (yield
        (thread
