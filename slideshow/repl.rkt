@@ -94,6 +94,9 @@
            (super-new))
          [namespace (make-namespace)]))
   (define result-custodian (make-custodian))
+  (define (reset-custodian!)
+    (custodian-shutdown-all result-custodian)
+    (set! result-custodian (make-custodian)))
 
   (define available (make-hash))
   (define (register-available! name t)
@@ -116,8 +119,7 @@
                             (loop (cdr l))))))))
 
   (define (do-eval name t sm)
-    (custodian-shutdown-all result-custodian)
-    (set! result-custodian (make-custodian))
+    (reset-custodian!)
     (send result-editor reset-console)
     (when prompt-str
       (send result-editor initialize-console))
@@ -266,6 +268,7 @@
                         #f))
       (set! on-screen (add1 on-screen))
       (lambda ()
+        (reset-custodian!)
         (set! on-screen (sub1 on-screen))
         (send c set-editor #f)
         (unregister-available! name)))
@@ -310,6 +313,7 @@
                    (set! on-screen (add1 on-screen))
                    (install-background c background)
                    (lambda ()
+                     (reset-custodian!)
                      (set! on-screen (sub1 on-screen))
                      (send c set-editor #f)))))
 
