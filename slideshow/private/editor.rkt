@@ -182,14 +182,21 @@
              [abl (drop-right old-regions 1)]
              [lst (last old-regions)])
         (reset-regions (append abl (list (list (list-ref lst 0) (last-position))))))
-      
+
       ;; lets us know we are done with this one interaction
       ;; (since there may be multiple expressions at the prompt)
       (send-eof-to-in-port)
       
       (set! prompt-position #f)
+
+      (define in (get-in-port))
+      (set! history (cons (regexp-replace* #px"\\s+$"
+                                           (peek-string 4096 0 in)
+                                           "")
+                          history))
+
       (evaluate-from-port
-       (get-in-port) 
+       in
        #f
        (λ ()
           ;; clear out the eof object if it wasn't consumed
@@ -289,6 +296,7 @@
     (inherit get-backward-sexp split-snip
              get-snip-position insert
              find-snip)
+    (define history null)
     (define/override (on-local-char key)
       (let ([start (get-start-position)]
             [end (get-end-position)]
@@ -312,6 +320,17 @@
           (copy-down start end)]
          [else
           (super on-local-char key)])))
+    
+    (define/public (restore backward?)
+      (unless (null? history)
+        (define s (get-unread-start-point))
+        (define e (last-position))
+        (delete s e)
+        (when (not backward?)
+          (set! history (cons (last history) (drop-right history 1))))
+        (insert (car history))
+        (when backward?
+          (set! history (append (cdr history) (list (car history)))))))
 
     (define/private (copy-down start end)
       (begin-edit-sequence)
@@ -328,6 +347,15 @@
       (end-edit-sequence))
 
     (super-new)
+
+    (inherit get-keymap)
+    (let ([km (get-keymap)])
+      (send km add-function "repl-previous"
+            (lambda (v e) (restore #t)))
+      (send km add-function "repl-next"
+            (lambda (v e) (restore #f)))
+      (send km map-function "esc;p" "repl-previous")
+      (send km map-function "esc;n" "repl-next"))
 
     (initialize-console)))
 
