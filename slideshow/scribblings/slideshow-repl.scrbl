@@ -14,6 +14,38 @@
 provides support for picts (using @racket[interactive]) that allow
 interactive evaluation within a slide presentation.}
 
+The following example shows how to set up two modules displayed in
+their own picts along with a result area:
+
+@racketblock[
+(define rg (make-repl-group))
+
+(code:comment "the first module")
+(define backing-1
+  (make-module-backing
+   rg
+   #:module-name "fact.rkt"
+   "#lang racket"
+   "(define (fact n)"
+   "  (if (= n 0) 1 (* n (fact (sub1 n)))))"
+   "(provide fact)"))
+
+(code:comment "the second module")
+(define backing-2
+  (make-module-backing
+   rg
+   "#lang racket"
+   "(require \"fact.rkt\")"
+   "(fact 5)"))
+
+(code:comment "shows content of module 1")
+(module-area backing-1)
+(code:comment "shows content of module 2")
+(module-area backing-2)
+(code:comment "shows the result of running either module (use F5)")
+(result-area rg)
+]
+
 @defproc[(repl-area [#:width width real? (* client-w 2/3)]
                     [#:height height real? (* client-h 1/4)]
                     [#:font-size font-size (or/c #f (integer-in 1 1024)) #f]
