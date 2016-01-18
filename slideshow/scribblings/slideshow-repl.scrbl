@@ -49,6 +49,7 @@ their own picts along with a result area:
 @defproc[(repl-area [#:width width real? (* client-w 2/3)]
                     [#:height height real? (* client-h 1/4)]
                     [#:font-size font-size (or/c #f (integer-in 1 1024)) #f]
+                    [#:own-size? own-size? boolean? #f]
                     [#:background background (or/c #f (is-a?/c color%) string?) #f]
                     [#:prompt prompt-str string? "> "]
                     [#:make-namespace make-namespace (-> namespace?) make-base-namespace]
@@ -64,10 +65,12 @@ The @racket[width] and @racket[height] arguments determine the size of
 the resulting pict.
 
 If @racket[font-size] is not @racket[#f], then it determines a font
-size used, but with the constraint that all
-@racket[slideshow/repl]-based picts that appear on the slide will use
-the same font size (so all such picts should specify a consistent
-size, or else an unspecified pict's size is used).
+size used. If @racket[own-size?] is true, then the size applies only
+to the font for this pict. All @racket[slideshow/repl]-based picts
+with @racket[own-size?] as @racket[#f], however, use the same font
+size when they appear on the same slide (so all such picts should
+specify a consistent size, or else an unspecified pict's size is
+used).
 
 When @racket[background] is not @racket[#f], it determines a
 background for the area.
@@ -80,7 +83,9 @@ once) for evaluation.
 
 The @racket[content] strings, if any, are inserted into the evaluation
 area after the prompt, with a newline between each @racket[content]
-string.}
+string.
+
+@history[#:changed "1.2" @elem{Added @racket[own-size?].}]}
 
 
 @defproc[(make-repl-group [#:log-file log-file path-string? "eval-log.rktl"]
@@ -117,6 +122,7 @@ Returns @racket[#t] if @racket[v] is a context created by
                       [#:height height real? (* client-h 1/4)]
                       [#:background background (or/c (is-a?/c color%) string?) "white"]
                       [#:font-size font-size (or/c #f (integer-in 1 1024)) #f]
+                      [#:own-size? own-size? boolean? #f]
                       [content string?] ...)
          pict?]{
 
@@ -158,6 +164,7 @@ Returns @racket[#t] if @racket[v] is a context created by
                       [#:height height real? (* client-h 1/4)]
                       [#:background background (or/c (is-a?/c color%) string?) "white"]
                       [#:font-size font-size (or/c #f (integer-in 1 1024)) #f]
+                      [#:own-size? own-size? boolean? #f]
                       [#:auto-eval? auto-eval? any/c #f])
           pict?]{
 

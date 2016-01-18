@@ -30,13 +30,15 @@
                              #:height real?
                              #:background (or/c #f (is-a?/c color%) string?)
                              #:font-size (or/c #f (integer-in 1 1024))
+                             #:own-size? boolean?
                              #:auto-eval? any/c)
                     pict?)]
   [result-area (->* (repl-group?)
                     (#:width real?
                              #:height real?
                              #:background (or/c #f (is-a?/c color%) string?)
-                             #:font-size (or/c #f (integer-in 1 1024)))
+                             #:font-size (or/c #f (integer-in 1 1024))
+                             #:own-size? boolean?)
                     #:rest (listof string?)
                     pict?)]
   [repl-area (->* ()
@@ -44,6 +46,7 @@
                              #:height real?
                              #:background (or/c #f (is-a?/c color%) string?)
                              #:font-size (or/c #f (integer-in 1 1024))
+                             #:own-size? boolean?
                              #:prompt string?
                              #:make-namespace (-> namespace?))
                   #:rest (listof string?)
@@ -105,10 +108,12 @@
     (hash-remove! available name))
   (define current-loading-modules (make-parameter null))
 
-  (define (reset-font! font-size)
+  (define (reset-font! font-size t)
     (when (or font-size
+              t
               (zero? on-screen))
-      (set-font! (or font-size default-font-size)
+      (set-font! t
+                 (or font-size default-font-size)
                  ;; face/family
                  (let loop ([l (current-code-font)])
                    (if (pair? l) (loop (cdr l)) l))
@@ -241,11 +246,11 @@
       (unless (= (add1 i) (length init-lines))
         (send t insert "\n")))
     (define km (send t get-keymap))
-    (define ((create font-size auto-eval? background) win)
+    (define ((create font-size own-size? auto-eval? background) win)
       (send result-editor reset-console)
       (when prompt-str
         (send result-editor initialize-console))
-      (reset-font! font-size)
+      (reset-font! font-size (and own-size? t))
       (define name (path->complete-path mod-file-name))
       (send km add-function "run"
             (lambda (v e)
@@ -266,18 +271,22 @@
         (queue-callback (lambda ()
                           (do-eval name t #f))
                         #f))
-      (set! on-screen (add1 on-screen))
+      (unless own-size?
+        (set! on-screen (add1 on-screen)))
       (lambda ()
         (reset-custodian!)
-        (set! on-screen (sub1 on-screen))
+        (unless own-size?
+          (set! on-screen (sub1 on-screen)))
         (send c set-editor #f)
         (unregister-available! name)))
     (lambda (#:width w #:height h
                      #:background background
                      #:font-size font-size
+                     #:own-size? own-size?
                      #:auto-eval? auto-eval?)
       (define content (interactive (fit-lines init-lines w h)
                                    (create font-size
+                                           own-size?
                                            auto-eval?
                                            background)))
       content))
@@ -285,6 +294,7 @@
   (define (result-area #:width w
                        #:height h
                        #:font-size font-size
+                       #:own-size? own-size?
                        #:background background
                        content)
     (interactive (fit-lines (if (and (pair? content)
@@ -295,7 +305,7 @@
                                 content)
                             w h)
                  (lambda (win)
-                   (reset-font! font-size)
+                   (reset-font! font-size (and own-size? result-editor))
                    (send result-editor reset-console)
                    (when prompt-str
                      (send result-editor initialize-console))
@@ -310,11 +320,13 @@
                           [parent win]
                           [editor result-editor]
                           [style '(auto-vscroll auto-hscroll no-border)]))
-                   (set! on-screen (add1 on-screen))
+                   (unless own-size?
+                     (set! on-screen (add1 on-screen)))
                    (install-background c background)
                    (lambda ()
                      (reset-custodian!)
-                     (set! on-screen (sub1 on-screen))
+                     (unless own-size?
+                       (set! on-screen (sub1 on-screen)))
                      (send c set-editor #f)))))
 
 
@@ -333,12 +345,14 @@
                      #:height [h (* client-h 1/4)]
                      #:background [background #f]
                      #:font-size [font-size #f]
+                     #:own-size? [own-size? #f]
                      #:auto-eval? [auto-eval? #f])
   ((module-backing-area backing)
    #:width w 
    #:height h 
    #:background background
    #:font-size font-size
+   #:own-size? own-size?
    #:auto-eval? auto-eval?))
 
 (define (result-area group
@@ -346,6 +360,7 @@
                      #:height [h (* client-h 1/4)]
                      #:background [background #f]
                      #:font-size [font-size #f]
+                     #:own-size? [own-size? #f]
                      . content)
   
   ((repl-group-result-area group)
@@ -353,11 +368,13 @@
    #:width w
    #:height h
    #:font-size font-size
+   #:own-size? own-size?
    #:background background))
 
 (define (repl-area #:width [w (* client-w 2/3)]
                    #:height [h (* client-h 1/4)]
                    #:font-size [font-size #f]
+                   #:own-size? [own-size? #f]
                    #:background [background #f]
                    #:prompt [prompt-str "> "]
                    #:make-namespace [make-namespace make-base-namespace]
@@ -367,6 +384,7 @@
          #:width w
          #:height h
          #:font-size font-size
+         #:own-size? own-size?
          #:background background
          content))
 

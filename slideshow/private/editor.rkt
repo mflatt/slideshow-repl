@@ -7,18 +7,21 @@
          repl-text%
          set-font!)
 
+(define (make-style-list)
+  (define sl (new style-list%))
+  ;; Copy the standard style list:
+  (for ([i (in-range (send (editor:get-standard-style-list) number))])
+    (send sl
+          convert
+          (send (editor:get-standard-style-list)
+                index-to-style
+                i)))
+  sl)
+
 (define slide-style-list
-  (new style-list%))
+  (make-style-list))
 
-;; Copy the standard style list:
-(for ([i (in-range (send (editor:get-standard-style-list) number))])
-  (send slide-style-list
-        convert
-        (send (editor:get-standard-style-list)
-              index-to-style
-              i)))
-
-(define (set-font! sz font bold?)
+(define (set-font! editor sz font bold?)
   (define face
     (if (string? font)
         font
@@ -27,7 +30,10 @@
               (send the-font-name-directory find-family-default-font-id font)
               'normal
               'normal)))
-  (define s (send slide-style-list find-named-style "Standard"))
+  (define sl (if editor
+                 (make-style-list)
+                 slide-style-list))
+  (define s (send sl find-named-style "Standard"))
   (define d (new style-delta%))
   (send s get-delta d)
   (send d set-delta 'change-size sz)
@@ -36,7 +42,9 @@
     (send d set-weight-on 'bold) ; Unfortunately, syntax coloring seems to override this, so...
     (send d set-face (~a face ", bold"))) ; ... set face explciitly to a "bold" variant
   (send d set-family 'modern)
-  (send s set-delta d))
+  (send s set-delta d)
+  (when editor
+    (send editor set-style-list sl)))
 
 (define (slide:style-list-mixin e%)
   (class e%
