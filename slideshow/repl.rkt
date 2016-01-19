@@ -55,7 +55,7 @@
 (define (scale-font-size s)
   (inexact->exact (floor (* (car (current-expected-text-scale)) s))))
 
-(define default-font-size (scale-font-size (current-font-size)))
+(define default-font-size (current-font-size))
 
 (define on-screen 0)
 
@@ -113,7 +113,8 @@
               t
               (zero? on-screen))
       (set-font! t
-                 (or font-size default-font-size)
+                 (scale-font-size (or font-size
+                                      default-font-size))
                  ;; face/family
                  (let loop ([l (current-code-font)])
                    (if (pair? l) (loop (cdr l)) l))
