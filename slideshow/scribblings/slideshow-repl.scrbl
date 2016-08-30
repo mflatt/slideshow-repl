@@ -136,6 +136,7 @@ content.}
 
 @defproc[(make-module-backing [group repl-group?]
                               [#:module-name module-name path-string? "program.rkt"]
+                              [#:change-callback change-callback ((is-a?/c text%) . -> . any) void]
                               [content-line string?] ...)
          module-backing?]{
 
@@ -152,7 +153,13 @@ Multiple modules areas created with @racket[module-area] can share a
 backing, so that they provide the same view on the underlying
 content. For example, a narrow view on one slide might be replaced by
 a wider view on another side with the same module backing, so that
-edits via the first are preserved in the second area's display.}
+edits via the first are preserved in the second area's display.
+
+The optional @racket[change-callback] function is called whenever the
+text content of the module is changed by the user. The editor for the
+module's content is provided to @racket[change-callback].
+
+@history[#:changed "1.3" @elem{Added @racket[change-callback].}]}
 
 @defproc[(module-backing? [v any/c]) boolean?]{
 

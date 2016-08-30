@@ -20,7 +20,8 @@
                                     #:make-namespace (-> namespace?))
                         repl-group?)]
   [make-module-backing (->* (repl-group?)
-                            (#:module-name path-string?)
+                            (#:module-name path-string?
+                                           #:change-callback ((is-a?/c text%) . -> . any))
                             #:rest (listof string?)
                             module-backing?)]
   [module-backing-module-name (-> module-backing?
@@ -229,6 +230,7 @@
         (eval e))))
 
   (define (module-area-maker #:name [mod-file-name #f]
+                             #:change-callback [change-callback void]
                              init-lines)
     (define t (new (class slide:text%
                      (inherit unhighlight-ranges)
@@ -240,6 +242,9 @@
                      (define/augment (on-delete s e)
                        (clear-highlights)
                        (inner (void) on-delete s e))
+                     (define/augment (on-change)
+                       (change-callback this)
+                       (inner (void) on-change))
                      (super-new))))
     (for ([s (in-list init-lines)]
           [i (in-naturals)])
@@ -335,9 +340,11 @@
 
 (define (make-module-backing group
                              #:module-name [file-name "program.rkt"]
+                             #:change-callback [change-callback void]
                              . content-lines)
   (module-backing ((repl-group-module-area-maker group)
                    #:name file-name
+                   #:change-callback change-callback
                    content-lines)
                   file-name))
 
